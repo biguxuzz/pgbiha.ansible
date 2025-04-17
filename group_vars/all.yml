@@ -12,7 +12,6 @@ postgres_data_dir: "/var/lib/pgpro/ent-{{ postgres_version }}/data"
 postgres_bin_dir: "/opt/pgpro/ent-{{ postgres_version }}/bin" 
 
 # BiHA cluster configuration
-biha_node_id: "{{ 1 if inventory_hostname in groups['leader'] else 2 if inventory_hostname in groups['follower'] else 4 }}"
 biha_nquorum: 2
 biha_minnodes: 2
 

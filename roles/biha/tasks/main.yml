@@ -29,9 +29,9 @@
   become_user: postgres
   shell: |
     /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl init --convert \
-      --biha-node-id=1 \
+      --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
-      --port=5432 \
+      --port={{ postgres_port }} \
       --nquorum={{ biha_nquorum }} \
       --minnodes={{ biha_minnodes }} \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
@@ -76,10 +76,10 @@
   become_user: postgres
   shell: |
     /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl add \
-      --biha-node-id=2 \
+      --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
-      --port=5432 \
-      --biha-port=5433 \
+      --port={{ postgres_port }} \
+      --biha-port={{ biha_port }} \
       --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
   when: inventory_hostname in groups['follower']
@@ -90,10 +90,10 @@
   become_user: postgres
   shell: |
     /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl add \
-      --biha-node-id={{ biha_node_id }} \
+      --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
-      --port=5432 \
-      --biha-port=5433 \
+      --port={{ postgres_port }} \
+      --biha-port={{ biha_port }} \
       --mode=referee \
       --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
