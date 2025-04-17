@@ -5,15 +5,27 @@ all:
         leader:
           ansible_host: 192.168.54.109
           ansible_user: iadmin
+          ansible_become: yes
+          ansible_become_method: sudo
+          ansible_become_user: root
+          ansible_become_ask_pass: no
           node_role: LEADER
           node_id: 1
         follower:
           ansible_host: 192.168.54.170
           ansible_user: iadmin
+          ansible_become: yes
+          ansible_become_method: sudo
+          ansible_become_user: root
+          ansible_become_ask_pass: no
           node_role: FOLLOWER
           node_id: 2
         referee:
           ansible_host: 192.168.54.125
           ansible_user: iadmin
+          ansible_become: yes
+          ansible_become_method: sudo
+          ansible_become_user: root
+          ansible_become_ask_pass: no
           node_role: REFEREE
           node_id: 3 
