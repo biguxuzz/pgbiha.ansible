@@ -1,0 +1,21 @@
+---
+# PostgreSQL version
+postgres_version: "17"
+
+# Postgres Pro repository URL
+postgres_pro_repo_url: "https://repo.postgrespro.ru/ent/ent-{{ postgres_version }}/keys/pgpro-repo-add.sh"
+
+# PostgreSQL data directory
+postgres_data_dir: "/var/lib/pgpro/ent-{{ postgres_version }}/data"
+
+# PostgreSQL binary directory
+postgres_bin_dir: "/opt/pgpro/ent-{{ postgres_version }}/bin" 
+
+# BiHA cluster configuration
+biha_node_id: "{{ 1 if inventory_hostname in groups['leader'] else 2 if inventory_hostname in groups['follower'] else 4 }}"
+biha_nquorum: 2
+biha_minnodes: 2
+
+# PostgreSQL ports
+postgres_port: 5432
+biha_port: 5433 
