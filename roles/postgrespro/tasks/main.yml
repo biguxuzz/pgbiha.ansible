@@ -1,12 +1,12 @@
 ---
 - name: Check if Postgres Pro repository exists
   stat:
-    path: "/etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list"
+    path: "/etc/apt/sources.list.d/postgrespro-ent-{{ postgres_version }}.list"
   register: repo_file
 
 - name: Remove existing Postgres Pro repository
   file:
-    path: "/etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list"
+    path: "/etc/apt/sources.list.d/postgrespro-ent-{{ postgres_version }}.list"
     state: absent
   when: repo_file.stat.exists
 
@@ -22,7 +22,7 @@
 - name: Execute repository script
   shell: /tmp/pgpro-repo-add.sh
   args:
-    creates: "/etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list"
+    creates: "/etc/apt/sources.list.d/postgrespro-ent-{{ postgres_version }}.list"
   register: repo_result
   changed_when: repo_result.rc == 0
 
