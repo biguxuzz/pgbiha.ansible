@@ -48,7 +48,7 @@
   poll: 10
 
 - name: Check installation status
-  command: "dpkg -l | grep postgrespro-ent-{{ postgres_version }}-contrib"
+  shell: "dpkg-query -W -f='${Status}' postgrespro-ent-{{ postgres_version }}-contrib | grep -q '^install ok installed$'"
   register: pg_check
   changed_when: false
   failed_when: pg_check.rc != 0
