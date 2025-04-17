@@ -10,6 +10,8 @@ all:
           ansible_become_user: root
           ansible_become_ask_pass: no
           ansible_python_interpreter: /usr/bin/python3
+          ansible_connection: ssh
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
           node_role: LEADER
           node_id: 1
         follower:
@@ -20,6 +22,8 @@ all:
           ansible_become_user: root
           ansible_become_ask_pass: no
           ansible_python_interpreter: /usr/bin/python3
+          ansible_connection: ssh
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
           node_role: FOLLOWER
           node_id: 2
         referee:
@@ -30,5 +34,7 @@ all:
           ansible_become_user: root
           ansible_become_ask_pass: no
           ansible_python_interpreter: /usr/bin/python3
+          ansible_connection: ssh
+          ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
           node_role: REFEREE
           node_id: 3 
