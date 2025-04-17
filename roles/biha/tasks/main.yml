@@ -1,9 +1,20 @@
 ---
-- name: Stop Postgres Pro service
+- name: Stop PostgreSQL service
   systemd:
-    name: postgrespro-ent-{{ postgres_version }}
+    name: "postgrespro-ent-{{ postgres_version }}"
     state: stopped
-  when: node_role == "LEADER"
+  when: inventory_hostname in groups['leader'] or inventory_hostname in groups['follower'] or inventory_hostname in groups['referee']
+
+- name: Set PATH for postgres user
+  become: yes
+  become_user: postgres
+  lineinfile:
+    path: "/var/lib/postgresql/.bashrc"
+    line: 'export PATH="/opt/pgpro/ent-{{ postgres_version }}/bin:$PATH"'
+    create: yes
+    mode: '0600'
+    owner: postgres
+    group: postgres
 
 - name: Create .pgpass file for postgres user
   copy:
@@ -14,41 +25,98 @@
     mode: '0600'
 
 - name: Initialize BiHA cluster on leader
+  become: yes
+  become_user: postgres
   shell: |
-    su - postgres -c 'bihactl init --convert --biha-node-id={{ node_id }} --host={{ ansible_host }} --port={{ postgres_port }} --nquorum=2 --minnodes=2 --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data'
-  when: node_role == "LEADER"
+    /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl init --convert \
+      --biha-node-id=1 \
+      --host={{ ansible_host }} \
+      --port=5432 \
+      --nquorum={{ biha_nquorum }} \
+      --minnodes={{ biha_minnodes }} \
+      --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
+  args:
+    creates: "/var/lib/pgpro/ent-{{ postgres_version }}/data/PG_VERSION"
+  environment:
+    PGPASSWORD: "{{ biha_replication_password }}"
   register: biha_init
+  when: inventory_hostname in groups['leader']
   no_log: true
 
 - name: Set magic string fact
   set_fact:
     magic_string: "{{ biha_init.stdout }}"
-  when: node_role == "LEADER"
+  when: inventory_hostname in groups['leader']
 
 - name: Configure pg_hba.biha.conf
+  become: yes
+  become_user: postgres
   blockinfile:
-    path: /var/lib/pgpro/ent-{{ postgres_version }}/data/pg_hba.biha.conf
+    path: "/var/lib/pgpro/ent-{{ postgres_version }}/data/pg_hba.biha.conf"
+    create: yes
+    mode: '0600'
+    owner: postgres
+    group: postgres
     block: |
       # TYPE  DATABASE        USER                   ADDRESS       METHOD
       host    postgres        biha_replication_user  all           md5
       host    biha_db         biha_replication_user  all           md5
       host    replication     biha_replication_user  all           md5
-    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+
+- name: Clean data directory for referee
+  become: yes
+  become_user: postgres
+  file:
+    path: "/var/lib/pgpro/ent-{{ postgres_version }}/data"
+    state: absent
+  when: inventory_hostname in groups['referee'] or inventory_hostname in groups['follower']
 
 - name: Add follower to cluster
+  become: yes
+  become_user: postgres
   shell: |
-    su - postgres -c 'bihactl add --biha-node-id={{ node_id }} --host={{ ansible_host }} --port={{ postgres_port }} --biha-port={{ biha_port }} --magic-string="{{ magic_string }}" --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data'
-  when: node_role == "FOLLOWER"
+    /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl add \
+      --biha-node-id=2 \
+      --host={{ ansible_host }} \
+      --port=5432 \
+      --biha-port=5433 \
+      --magic-string="{{ magic_string }}" \
+      --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
+  when: inventory_hostname in groups['follower']
   no_log: true
 
 - name: Add referee to cluster
+  become: yes
+  become_user: postgres
   shell: |
-    su - postgres -c 'bihactl add --biha-node-id={{ node_id }} --host={{ ansible_host }} --port={{ postgres_port }} --biha-port={{ biha_port }} --magic-string="{{ magic_string }}" --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data'
-  when: node_role == "REFEREE"
+    /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl add \
+      --biha-node-id={{ biha_node_id }} \
+      --host={{ ansible_host }} \
+      --port=5432 \
+      --biha-port=5433 \
+      --mode=referee \
+      --magic-string="{{ magic_string }}" \
+      --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
+  when: inventory_hostname in groups['referee']
   no_log: true
 
-- name: Start Postgres Pro service
+- name: Start PostgreSQL service
   systemd:
-    name: postgrespro-ent-{{ postgres_version }}
+    name: "postgrespro-ent-{{ postgres_version }}"
     state: started
-    enabled: yes 
+    enabled: yes
+  when: inventory_hostname in groups['leader'] or inventory_hostname in groups['follower'] or inventory_hostname in groups['referee']
+
+- name: Wait for PostgreSQL to start
+  wait_for:
+    port: 5432
+    timeout: 30
+  when: inventory_hostname in groups['leader'] or inventory_hostname in groups['follower'] or inventory_hostname in groups['referee']
+
+- name: Check BiHA cluster status
+  become: yes
+  become_user: postgres
+  shell: "/opt/pgpro/ent-{{ postgres_version }}/bin/bihactl status --magic-string={{ magic_string }}"
+  register: biha_status
+  when: inventory_hostname in groups['leader']
+  changed_when: false 
