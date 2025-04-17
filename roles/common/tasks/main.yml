@@ -19,6 +19,29 @@
     state: link
   when: python3_check.rc != 0 and ansible_os_family in ['Debian', 'AstraLinux']
 
+- name: Install locales package
+  apt:
+    name: locales
+    state: present
+    update_cache: yes
+  when: ansible_os_family in ['Debian', 'AstraLinux']
+
+- name: Generate UTF-8 locale
+  locale_gen:
+    name: ru_RU.UTF-8
+    state: present
+  when: ansible_os_family in ['Debian', 'AstraLinux']
+
+- name: Set default locale
+  lineinfile:
+    path: /etc/default/locale
+    line: "{{ item }}"
+    create: yes
+  with_items:
+    - LANG=ru_RU.UTF-8
+    - LC_ALL=ru_RU.UTF-8
+  when: ansible_os_family in ['Debian', 'AstraLinux']
+
 - name: Ensure sudo is installed
   apt:
     name: sudo
