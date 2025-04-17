@@ -8,3 +8,4 @@ postgres_port: 5482
 biha_port: 5483
 postgres_pro_license: "20220d77-e52d-475a-902f-279a83f77e5b"
 postgres_pro_repo_url: "https://repo.postgrespro.ru/ent/ent-17/keys/pgpro-repo-add.sh"
+node_id: 1
