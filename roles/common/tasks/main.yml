@@ -1,4 +1,24 @@
 ---
+- name: Check Python version
+  command: which python3
+  register: python3_check
+  ignore_errors: yes
+  changed_when: false
+
+- name: Install Python 3
+  apt:
+    name: python3
+    state: present
+    update_cache: yes
+  when: python3_check.rc != 0 and ansible_os_family in ['Debian', 'AstraLinux']
+
+- name: Create Python symlink
+  file:
+    src: /usr/bin/python3
+    dest: /usr/bin/python
+    state: link
+  when: python3_check.rc != 0 and ansible_os_family in ['Debian', 'AstraLinux']
+
 - name: Ensure sudo is installed
   apt:
     name: sudo
