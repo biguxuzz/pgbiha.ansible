@@ -1,33 +1,76 @@
 ---
+- name: Check if Postgres Pro repository exists
+  stat:
+    path: /etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list
+  register: repo_file
+
+- name: Remove existing Postgres Pro repository
+  file:
+    path: /etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list
+    state: absent
+  when: repo_file.stat.exists
+
 - name: Download Postgres Pro repository script
   get_url:
-    url: "{{ postgres_pro_repo_url }}"
+    url: {{ postgres_pro_repo_url }}
     dest: /tmp/pgpro-repo-add.sh
     mode: '0755'
-    url_username: "{{ postgres_pro_license }}"
+    url_username: {{ postgres_pro_license }}
     url_password: ''
+    timeout: 30
 
 - name: Execute repository script
   shell: /tmp/pgpro-repo-add.sh
   args:
     creates: /etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list
+  register: repo_result
+  changed_when: repo_result.rc == 0
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+  register: apt_update
+  until: apt_update is success
+  retries: 3
+  delay: 5
 
 - name: Install Postgres Pro Enterprise
   apt:
     name: postgrespro-ent-{{ postgres_version }}-contrib
     state: present
-    update_cache: yes
+    update_cache: no
+  register: pg_install
+  until: pg_install is success
+  retries: 3
+  delay: 10
+  async: 600
+  poll: 10
+
+- name: Check installation status
+  command: dpkg -l | grep postgrespro-ent-{{ postgres_version }}-contrib
+  register: pg_check
+  changed_when: false
+  failed_when: pg_check.rc != 0
 
 - name: Initialize database
   shell: /opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup initdb --tune=1c
   args:
     creates: /var/lib/pgpro/ent-{{ postgres_version }}/data/PG_VERSION
+  register: init_result
+  changed_when: init_result.rc == 0
 
 - name: Enable Postgres Pro service
   shell: /opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup service enable
+  register: enable_result
+  changed_when: enable_result.rc == 0
 
 - name: Start Postgres Pro service
   systemd:
     name: postgrespro-ent-{{ postgres_version }}
     state: started
-    enabled: yes 
+    enabled: yes
+  register: start_result
+  until: start_result is success
+  retries: 3
+  delay: 5 
