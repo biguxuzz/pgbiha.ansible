@@ -1,0 +1,54 @@
+---
+- name: Stop Postgres Pro service
+  systemd:
+    name: postgrespro-ent-{{ postgres_version }}
+    state: stopped
+  when: node_role == "LEADER"
+
+- name: Create .pgpass file for postgres user
+  copy:
+    content: "*:*:*:biha_replication_user:{{ biha_replication_password }}"
+    dest: /var/lib/postgresql/.pgpass
+    owner: postgres
+    group: postgres
+    mode: '0600'
+
+- name: Initialize BiHA cluster on leader
+  shell: |
+    su - postgres -c 'bihactl init --convert --biha-node-id={{ node_id }} --host={{ ansible_host }} --port={{ postgres_port }} --nquorum=2 --minnodes=2 --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data'
+  when: node_role == "LEADER"
+  register: biha_init
+  no_log: true
+
+- name: Set magic string fact
+  set_fact:
+    magic_string: "{{ biha_init.stdout }}"
+  when: node_role == "LEADER"
+
+- name: Configure pg_hba.biha.conf
+  blockinfile:
+    path: /var/lib/pgpro/ent-{{ postgres_version }}/data/pg_hba.biha.conf
+    block: |
+      # TYPE  DATABASE        USER                   ADDRESS       METHOD
+      host    postgres        biha_replication_user  all           md5
+      host    biha_db         biha_replication_user  all           md5
+      host    replication     biha_replication_user  all           md5
+    marker: "# {mark} ANSIBLE MANAGED BLOCK"
+
+- name: Add follower to cluster
+  shell: |
+    su - postgres -c 'bihactl add --biha-node-id={{ node_id }} --host={{ ansible_host }} --port={{ postgres_port }} --biha-port={{ biha_port }} --magic-string="{{ magic_string }}" --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data'
+  when: node_role == "FOLLOWER"
+  no_log: true
+
+- name: Add referee to cluster
+  shell: |
+    su - postgres -c 'bihactl add --biha-node-id={{ node_id }} --host={{ ansible_host }} --port={{ postgres_port }} --biha-port={{ biha_port }} --magic-string="{{ magic_string }}" --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data'
+  when: node_role == "REFEREE"
+  no_log: true
+
+- name: Start Postgres Pro service
+  systemd:
+    name: postgrespro-ent-{{ postgres_version }}
+    state: started
+    enabled: yes 

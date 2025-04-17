@@ -1,0 +1,20 @@
+---
+- name: Install required packages
+  apt:
+    name:
+      - wget
+      - curl
+      - gnupg2
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+- name: Install required packages for Astra Linux
+  apt:
+    name:
+      - wget
+      - curl
+      - gnupg2
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "AstraLinux" 

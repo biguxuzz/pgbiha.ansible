@@ -1,0 +1,13 @@
+---
+- name: Install Postgres Pro Enterprise on all nodes
+  hosts: biha_cluster
+  become: true
+  roles:
+    - common
+    - postgrespro
+
+- name: Configure BiHA cluster
+  hosts: biha_cluster
+  become: true
+  roles:
+    - biha 

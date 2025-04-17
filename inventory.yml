@@ -1,0 +1,19 @@
+all:
+  children:
+    biha_cluster:
+      hosts:
+        leader:
+          ansible_host: 192.168.54.109
+          ansible_user: iadmin
+          node_role: LEADER
+          node_id: 1
+        follower:
+          ansible_host: 192.168.54.170
+          ansible_user: iadmin
+          node_role: FOLLOWER
+          node_id: 2
+        referee:
+          ansible_host: 192.168.54.125
+          ansible_user: iadmin
+          node_role: REFEREE
+          node_id: 3 

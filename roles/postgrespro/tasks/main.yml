@@ -1,0 +1,33 @@
+---
+- name: Download Postgres Pro repository script
+  get_url:
+    url: {{ postgres_pro_repo_url }}
+    dest: /tmp/pgpro-repo-add.sh
+    mode: '0755'
+    url_username: {{ postgres_pro_license }}
+    url_password: ''
+
+- name: Execute repository script
+  shell: /tmp/pgpro-repo-add.sh
+  args:
+    creates: /etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list
+
+- name: Install Postgres Pro Enterprise
+  apt:
+    name: postgrespro-ent-{{ postgres_version }}-contrib
+    state: present
+    update_cache: yes
+
+- name: Initialize database
+  shell: /opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup initdb --tune=1c
+  args:
+    creates: /var/lib/pgpro/ent-{{ postgres_version }}/data/PG_VERSION
+
+- name: Enable Postgres Pro service
+  shell: /opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup service enable
+
+- name: Start Postgres Pro service
+  systemd:
+    name: postgrespro-ent-{{ postgres_version }}
+    state: started
+    enabled: yes 
