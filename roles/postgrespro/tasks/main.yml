@@ -1,10 +1,10 @@
 ---
 - name: Download Postgres Pro repository script
   get_url:
-    url: {{ postgres_pro_repo_url }}
+    url: "{{ postgres_pro_repo_url }}"
     dest: /tmp/pgpro-repo-add.sh
     mode: '0755'
-    url_username: {{ postgres_pro_license }}
+    url_username: "{{ postgres_pro_license }}"
     url_password: ''
 
 - name: Execute repository script
