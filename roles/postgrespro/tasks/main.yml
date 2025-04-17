@@ -1,28 +1,28 @@
 ---
 - name: Check if Postgres Pro repository exists
   stat:
-    path: /etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list
+    path: "/etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list"
   register: repo_file
 
 - name: Remove existing Postgres Pro repository
   file:
-    path: /etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list
+    path: "/etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list"
     state: absent
   when: repo_file.stat.exists
 
 - name: Download Postgres Pro repository script
   get_url:
-    url: {{ postgres_pro_repo_url }}
+    url: "{{ postgres_pro_repo_url }}"
     dest: /tmp/pgpro-repo-add.sh
     mode: '0755'
-    url_username: {{ postgres_pro_license }}
+    url_username: "{{ postgres_pro_license }}"
     url_password: ''
     timeout: 30
 
 - name: Execute repository script
   shell: /tmp/pgpro-repo-add.sh
   args:
-    creates: /etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list
+    creates: "/etc/apt/sources.list.d/pgpro-ent-{{ postgres_version }}.list"
   register: repo_result
   changed_when: repo_result.rc == 0
 
@@ -37,7 +37,7 @@
 
 - name: Install Postgres Pro Enterprise
   apt:
-    name: postgrespro-ent-{{ postgres_version }}-contrib
+    name: "postgrespro-ent-{{ postgres_version }}-contrib"
     state: present
     update_cache: no
   register: pg_install
@@ -48,26 +48,26 @@
   poll: 10
 
 - name: Check installation status
-  command: dpkg -l | grep postgrespro-ent-{{ postgres_version }}-contrib
+  command: "dpkg -l | grep postgrespro-ent-{{ postgres_version }}-contrib"
   register: pg_check
   changed_when: false
   failed_when: pg_check.rc != 0
 
 - name: Initialize database
-  shell: /opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup initdb --tune=1c
+  shell: "/opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup initdb --tune=1c"
   args:
-    creates: /var/lib/pgpro/ent-{{ postgres_version }}/data/PG_VERSION
+    creates: "/var/lib/pgpro/ent-{{ postgres_version }}/data/PG_VERSION"
   register: init_result
   changed_when: init_result.rc == 0
 
 - name: Enable Postgres Pro service
-  shell: /opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup service enable
+  shell: "/opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup service enable"
   register: enable_result
   changed_when: enable_result.rc == 0
 
 - name: Start Postgres Pro service
   systemd:
-    name: postgrespro-ent-{{ postgres_version }}
+    name: "postgrespro-ent-{{ postgres_version }}"
     state: started
     enabled: yes
   register: start_result
