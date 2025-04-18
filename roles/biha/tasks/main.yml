@@ -17,10 +17,14 @@
 - name: Set permissions and move .pgpass file
   command: bash -c "install -m 0600 -o postgres -g postgres /tmp/pgpass /var/lib/postgresql/.pgpass"
   changed_when: true
+  environment:
+    PYTHONPATH: "/usr/lib/python3/dist-packages/"
 
 - name: Clean up temp file
   command: rm -f /tmp/pgpass
   changed_when: false
+  environment:
+    PYTHONPATH: "/usr/lib/python3/dist-packages/"
 
 - name: Initialize BiHA cluster on leader
   become: yes
