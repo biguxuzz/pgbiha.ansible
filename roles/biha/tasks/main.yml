@@ -3,7 +3,7 @@
   systemd:
     name: "postgrespro-ent-{{ postgres_version }}"
     state: stopped
-  when: inventory_hostname in groups['leader'] or inventory_hostname in groups['follower'] or inventory_hostname in groups['referee']
+  when: node_role in ['LEADER', 'FOLLOWER', 'REFEREE']
 
 - name: Set PATH for postgres user
   become: yes
@@ -40,13 +40,13 @@
   environment:
     PGPASSWORD: "{{ biha_replication_password }}"
   register: biha_init
-  when: inventory_hostname in groups['leader']
+  when: node_role == "LEADER"
   no_log: true
 
 - name: Set magic string fact
   set_fact:
     magic_string: "{{ biha_init.stdout }}"
-  when: inventory_hostname in groups['leader']
+  when: node_role == "LEADER"
 
 - name: Configure pg_hba.biha.conf
   become: yes
@@ -69,7 +69,7 @@
   file:
     path: "/var/lib/pgpro/ent-{{ postgres_version }}/data"
     state: absent
-  when: inventory_hostname in groups['referee'] or inventory_hostname in groups['follower']
+  when: node_role in ['REFEREE', 'FOLLOWER']
 
 - name: Add follower to cluster
   become: yes
@@ -82,7 +82,7 @@
       --biha-port={{ biha_port }} \
       --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
-  when: inventory_hostname in groups['follower']
+  when: node_role == "FOLLOWER"
   no_log: true
 
 - name: Add referee to cluster
@@ -97,7 +97,7 @@
       --mode=referee \
       --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
-  when: inventory_hostname in groups['referee']
+  when: node_role == "REFEREE"
   no_log: true
 
 - name: Start PostgreSQL service
@@ -105,18 +105,18 @@
     name: "postgrespro-ent-{{ postgres_version }}"
     state: started
     enabled: yes
-  when: inventory_hostname in groups['leader'] or inventory_hostname in groups['follower'] or inventory_hostname in groups['referee']
+  when: node_role in ['LEADER', 'FOLLOWER', 'REFEREE']
 
 - name: Wait for PostgreSQL to start
   wait_for:
     port: 5432
     timeout: 30
-  when: inventory_hostname in groups['leader'] or inventory_hostname in groups['follower'] or inventory_hostname in groups['referee']
+  when: node_role in ['LEADER', 'FOLLOWER', 'REFEREE']
 
 - name: Check BiHA cluster status
   become: yes
   become_user: postgres
   shell: "/opt/pgpro/ent-{{ postgres_version }}/bin/bihactl status --magic-string={{ magic_string }}"
   register: biha_status
-  when: inventory_hostname in groups['leader']
+  when: node_role == "LEADER"
   changed_when: false 
