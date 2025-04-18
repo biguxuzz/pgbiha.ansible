@@ -1,0 +1,30 @@
+---
+- name: Test command module with explicit PYTHONPATH
+  hosts: leader
+  become: yes
+  gather_facts: no # Отключаем сбор фактов для ускорения
+
+  tasks:
+    - name: Run simple command with explicit PYTHONPATH
+      command: echo "Testing command module execution" # Простая команда для вызова модуля command
+      environment:
+        PYTHONPATH: "/usr/lib/python3/dist-packages/" # Явно указываем путь
+      register: test_cmd_result
+      changed_when: false
+      failed_when: false # Не считать ошибкой, если команда вернет ненулевой код
+
+    - name: Debug command result
+      debug:
+        var: test_cmd_result
+        verbosity: 1 # Показать результат даже без -v
+
+    - name: Try python import directly (similar to install_deps.yml)
+      raw: python3 -c "import sys; sys.path.append('/usr/lib/python3/dist-packages/'); import ansible.module_utils.six.moves; print('Direct import OK')"
+      register: test_raw_import
+      changed_when: false
+      failed_when: false
+
+    - name: Debug raw import result
+      debug:
+        var: test_raw_import
+        verbosity: 1 
