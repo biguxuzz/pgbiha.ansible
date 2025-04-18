@@ -1,96 +1,53 @@
 ---
-- name: Check Python version
-  command: python3 --version
-  register: python_version
+- name: Install Python and dependencies
+  raw: |
+    if ! command -v python3 >/dev/null 2>&1; then
+      apt-get update
+      apt-get install -y python3-minimal python3-pip python3-setuptools python3-six
+      pip3 install six
+    fi
   changed_when: false
-  failed_when: false
-
-- name: Install Python 3 if not present
-  apt:
-    name: python3
-    state: present
-  when: python_version.rc != 0
-
-- name: Install Python packages
-  apt:
-    name:
-      - python3-pip
-      - python3-setuptools
-      - python3-six
-    state: present
-  register: python_packages
-  until: python_packages is success
-  retries: 3
-  delay: 5
-
-- name: Install pip packages
-  pip:
-    name:
-      - six
-    state: present
-  become: yes
-  become_user: root
-  when: python_packages is success
 
 - name: Ensure sudo is installed
-  apt:
-    name: sudo
-    state: present
-  register: sudo_install
-  until: sudo_install is success
-  retries: 3
-  delay: 5
+  raw: |
+    if ! command -v sudo >/dev/null 2>&1; then
+      apt-get update
+      apt-get install -y sudo
+    fi
+  changed_when: false
 
 - name: Configure passwordless sudo for iadmin
-  blockinfile:
-    path: /etc/sudoers.d/iadmin
-    create: yes
-    mode: '0440'
-    owner: root
-    group: root
-    block: |
-      iadmin ALL=(ALL) NOPASSWD: ALL
-      Defaults:iadmin !requiretty
+  raw: |
+    echo "iadmin ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/iadmin
+    echo "Defaults:iadmin !requiretty" >> /etc/sudoers.d/iadmin
+    chmod 440 /etc/sudoers.d/iadmin
+  changed_when: true
 
 - name: Install locales package
-  apt:
-    name: locales
-    state: present
-    update_cache: yes
-  when: ansible_os_family in ['Debian', 'AstraLinux']
+  raw: |
+    if ! dpkg -l | grep -q locales; then
+      apt-get update
+      apt-get install -y locales
+    fi
+  changed_when: false
 
 - name: Generate UTF-8 locale
-  locale_gen:
-    name: ru_RU.UTF-8
-    state: present
-  when: ansible_os_family in ['Debian', 'AstraLinux']
+  raw: |
+    if ! locale -a | grep -q ru_RU.UTF-8; then
+      locale-gen ru_RU.UTF-8
+    fi
+  changed_when: false
 
 - name: Set default locale
-  lineinfile:
-    path: /etc/default/locale
-    line: "{{ item }}"
-    create: yes
-  with_items:
-    - LANG=ru_RU.UTF-8
-    - LC_ALL=ru_RU.UTF-8
-  when: ansible_os_family in ['Debian', 'AstraLinux']
+  raw: |
+    echo "LANG=ru_RU.UTF-8" > /etc/default/locale
+    echo "LC_ALL=ru_RU.UTF-8" >> /etc/default/locale
+  changed_when: true
 
 - name: Install required packages
-  apt:
-    name:
-      - wget
-      - curl
-      - gnupg2
-    state: present
-    update_cache: yes
-  when: ansible_os_family == "Debian"
-
-- name: Install required packages for Astra Linux
-  apt:
-    name:
-      - wget
-      - curl
-      - gnupg2
-    state: present
-    update_cache: yes
-  when: ansible_os_family == "AstraLinux" 
+  raw: |
+    if ! dpkg -l | grep -q wget || ! dpkg -l | grep -q curl || ! dpkg -l | grep -q gnupg2; then
+      apt-get update
+      apt-get install -y wget curl gnupg2
+    fi
+  changed_when: false 
