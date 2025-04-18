@@ -35,12 +35,12 @@
       register: six_location
 
     - name: Debug six location result
-      raw: echo "Six location result: {{ six_location.stdout }}"
+      raw: 'echo "Six location result: {{ six_location.stdout }}"'
       changed_when: false
 
     - name: Create symbolic link to six.py
       raw: |
-        if [ "{{ six_exists.stdout }}" == "NOT_FOUND" ]; then
+        if [ "{{ six_exists.stdout }}" = "NOT_FOUND" ]; then
           ln -s /usr/lib/python3/dist-packages/six.py /usr/lib/python3/dist-packages/ansible/module_utils/six.py
         fi
       changed_when: "'NOT_FOUND' in six_exists.stdout"
@@ -51,7 +51,7 @@
       changed_when: false
 
     - name: Debug ansible module_utils content
-      raw: echo "{{ ansible_module_utils.stdout }}"
+      raw: 'echo "{{ ansible_module_utils.stdout }}"'
       changed_when: false
 
     - name: Try to install ansible-core via apt
@@ -66,5 +66,5 @@
       ignore_errors: yes
 
     - name: Debug six.moves import result
-      raw: echo "six.moves import result: {{ six_moves_test.stdout }}"
+      raw: 'echo "six.moves import result: {{ six_moves_test.stdout }}"'
       changed_when: false 
