@@ -11,6 +11,8 @@
 - name: Create temp .pgpass file
   command: bash -c "echo '*:*:*:biha_replication_user:{{ biha_replication_password }}' > /tmp/pgpass"
   changed_when: true
+  environment:
+    PYTHONPATH: "/usr/lib/python3/dist-packages/"
 
 - name: Set permissions and move .pgpass file
   command: bash -c "install -m 0600 -o postgres -g postgres /tmp/pgpass /var/lib/postgresql/.pgpass"
