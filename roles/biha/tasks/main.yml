@@ -47,7 +47,6 @@
     creates: "/var/lib/pgpro/ent-{{ postgres_version }}/data/PG_VERSION"
   register: biha_init
   when: node_role == "LEADER"
-  no_log: true
 
 - name: Set magic string fact
   set_fact:
@@ -85,7 +84,6 @@
       --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
   when: node_role == "FOLLOWER"
-  no_log: true
 
 - name: Add referee to cluster
   become: yes
@@ -100,7 +98,6 @@
       --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
   when: node_role == "REFEREE"
-  no_log: true
 
 - name: Start PostgreSQL service
   systemd:
