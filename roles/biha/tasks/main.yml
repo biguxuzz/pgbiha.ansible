@@ -24,7 +24,7 @@
 - name: Initialize BiHA cluster on leader
   become: yes
   become_user: postgres
-  shell: |
+  raw: |
     {{ postgres_bin_dir }}/bihactl init --convert \
       --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
