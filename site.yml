@@ -1,25 +1,20 @@
 ---
-- name: Install Python and sudo
-  hosts: biha_cluster
-  become: true
-  gather_facts: false
+- name: Install Python and basic packages
+  hosts: all
+  gather_facts: no
   tasks:
-    - name: Install Python and sudo
-      raw: |
-        which python3 || (apt-get update && apt-get install -y python3 sudo)
+    - name: Install Python 3
+      raw: test -e /usr/bin/python3 || (apt -y update && apt install -y python3-minimal python3-pip python3-setuptools python3-six)
       changed_when: false
 
-- name: Install Postgres Pro Enterprise on all nodes
-  hosts: biha_cluster
-  become: true
-  gather_facts: true
+    - name: Install pip packages
+      raw: pip3 install six
+      changed_when: false
+
+- name: Setup BiHA PostgreSQL cluster
+  hosts: all
+  become: yes
   roles:
     - common
     - postgrespro
-
-- name: Configure BiHA cluster
-  hosts: biha_cluster
-  become: true
-  gather_facts: true
-  roles:
     - biha 
