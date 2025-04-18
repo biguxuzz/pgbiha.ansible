@@ -9,23 +9,17 @@
   changed_when: true 
 
 - name: Create temp .pgpass file
-  shell: bash -c "echo '*:*:*:biha_replication_user:{{ biha_replication_password }}' > /tmp/pgpass"
+  raw: bash -c "echo '*:*:*:biha_replication_user:{{ biha_replication_password }}' > /tmp/pgpass"
   changed_when: true
-  environment:
-    PYTHONPATH: "/usr/lib/python3/dist-packages/"
   no_log: true
 
 - name: Set permissions and move .pgpass file
-  shell: bash -c "install -m 0600 -o postgres -g postgres /tmp/pgpass /var/lib/postgresql/.pgpass"
+  raw: bash -c "install -m 0600 -o postgres -g postgres /tmp/pgpass /var/lib/postgresql/.pgpass"
   changed_when: true
-  environment:
-    PYTHONPATH: "/usr/lib/python3/dist-packages/"
 
 - name: Clean up temp file
-  shell: rm -f /tmp/pgpass
+  raw: rm -f /tmp/pgpass
   changed_when: false
-  environment:
-    PYTHONPATH: "/usr/lib/python3/dist-packages/"
 
 - name: Initialize BiHA cluster on leader
   become: yes
