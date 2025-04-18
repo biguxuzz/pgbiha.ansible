@@ -16,5 +16,5 @@ biha_nquorum: 2
 biha_minnodes: 2
 
 # PostgreSQL ports
-postgres_port: 5432
-biha_port: 5433 
+postgres_port: 5433
+biha_port: 5434 
