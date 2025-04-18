@@ -57,24 +57,20 @@
 - name: Configure pg_hba.biha.conf
   become: yes
   become_user: postgres
-  blockinfile:
-    path: "/var/lib/pgpro/ent-{{ postgres_version }}/data/pg_hba.biha.conf"
-    create: yes
-    mode: '0600'
-    owner: postgres
-    group: postgres
-    block: |
-      # TYPE  DATABASE        USER                   ADDRESS       METHOD
-      host    postgres        biha_replication_user  all           md5
-      host    biha_db         biha_replication_user  all           md5
-      host    replication     biha_replication_user  all           md5
+  raw: |
+    cat > /var/lib/pgpro/ent-{{ postgres_version }}/data/pg_hba.biha.conf << 'EOF'
+    # TYPE  DATABASE        USER                   ADDRESS       METHOD
+    host    postgres        biha_replication_user  all           md5
+    host    biha_db         biha_replication_user  all           md5
+    host    replication     biha_replication_user  all           md5
+    EOF
+    chmod 600 /var/lib/pgpro/ent-{{ postgres_version }}/data/pg_hba.biha.conf
+    chown postgres:postgres /var/lib/pgpro/ent-{{ postgres_version }}/data/pg_hba.biha.conf
 
-- name: Clean data directory for referee
+- name: Clean data directory for referee and follower
   become: yes
   become_user: postgres
-  file:
-    path: "/var/lib/pgpro/ent-{{ postgres_version }}/data"
-    state: absent
+  raw: rm -rf /var/lib/pgpro/ent-{{ postgres_version }}/data/*
   when: node_role in ['REFEREE', 'FOLLOWER']
 
 - name: Add follower to cluster
