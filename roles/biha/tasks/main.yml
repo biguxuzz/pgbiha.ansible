@@ -81,18 +81,13 @@
   become: yes
   become_user: postgres
   raw: |
-    expect -c '
-      spawn {{ postgres_bin_dir }}/bihactl add \
-        --biha-node-id={{ node_id }} \
-        --host={{ ansible_host }} \
-        --port={{ postgres_port }} \
-        --biha-port={{ biha_port }} \
-        --magic-string="{{ magic_string }}" \
-        --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
-      expect "Please, provide password for biha_replication_user:"
-      send "{{ biha_replication_password }}\r"
-      expect eof
-    '
+    {{ postgres_bin_dir }}/bihactl add \
+      --biha-node-id={{ node_id }} \
+      --host={{ ansible_host }} \
+      --port={{ postgres_port }} \
+      --biha-port={{ biha_port }} \
+      --magic-string="{{ magic_string }}" \
+      --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
   when: node_role == "FOLLOWER"
   no_log: true
 
@@ -100,19 +95,14 @@
   become: yes
   become_user: postgres
   raw: |
-    expect -c '
-      spawn {{ postgres_bin_dir }}/bihactl add \
-        --biha-node-id={{ node_id }} \
-        --host={{ ansible_host }} \
-        --port={{ postgres_port }} \
-        --biha-port={{ biha_port }} \
-        --mode=referee \
-        --magic-string="{{ magic_string }}" \
-        --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
-      expect "Please, provide password for biha_replication_user:"
-      send "{{ biha_replication_password }}\r"
-      expect eof
-    '
+    {{ postgres_bin_dir }}/bihactl add \
+      --biha-node-id={{ node_id }} \
+      --host={{ ansible_host }} \
+      --port={{ postgres_port }} \
+      --biha-port={{ biha_port }} \
+      --mode=referee \
+      --magic-string="{{ magic_string }}" \
+      --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
   when: node_role == "REFEREE"
   no_log: true
 
