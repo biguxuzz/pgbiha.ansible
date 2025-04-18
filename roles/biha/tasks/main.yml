@@ -11,13 +11,11 @@
 - name: Set PATH for postgres user
   become: yes
   become_user: postgres
-  lineinfile:
-    path: "/var/lib/postgresql/.bashrc"
-    line: 'export PATH="{{ postgres_bin_dir }}:$PATH"'
-    create: yes
-    mode: '0600'
-    owner: postgres
-    group: postgres
+  raw: |
+    echo 'export PATH="{{ postgres_bin_dir }}:$PATH"' >> /var/lib/postgresql/.bashrc
+    chmod 600 /var/lib/postgresql/.bashrc
+    chown postgres:postgres /var/lib/postgresql/.bashrc
+  when: node_role in ['REFEREE', 'FOLLOWER']
 
 - name: Create .pgpass file for postgres user
   copy:
