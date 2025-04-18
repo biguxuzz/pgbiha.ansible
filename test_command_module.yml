@@ -27,4 +27,48 @@
     - name: Debug raw import result
       debug:
         var: test_raw_import
+        verbosity: 1
+
+    - name: === Testing actual pgpass creation commands ===
+      debug:
+        msg: "Now running the commands that failed in the main playbook."
+
+    - name: Create temp .pgpass file (from main playbook)
+      command: bash -c "echo '*:*:*:biha_replication_user:{{ biha_replication_password | default('testpassword') }}' > /tmp/pgpass_test"
+      environment:
+        PYTHONPATH: "/usr/lib/python3/dist-packages/"
+      register: pgpass_create_result
+      changed_when: false # Test only
+      failed_when: false # Test only
+      no_log: true # Avoid logging potential password
+
+    - name: Debug pgpass create result
+      debug:
+        var: pgpass_create_result
+        verbosity: 1
+
+    - name: Set permissions and move .pgpass file (from main playbook)
+      command: bash -c "install -m 0600 -o root -g root /tmp/pgpass_test /tmp/pgpass_test_final" # Using root/root and /tmp for test
+      environment:
+        PYTHONPATH: "/usr/lib/python3/dist-packages/"
+      register: pgpass_move_result
+      changed_when: false # Test only
+      failed_when: false # Test only
+
+    - name: Debug pgpass move result
+      debug:
+        var: pgpass_move_result
+        verbosity: 1
+
+    - name: Clean up temp file (from main playbook)
+      command: rm -f /tmp/pgpass_test /tmp/pgpass_test_final
+      environment:
+        PYTHONPATH: "/usr/lib/python3/dist-packages/"
+      register: pgpass_cleanup_result
+      changed_when: false # Test only
+      failed_when: false # Test only
+
+    - name: Debug pgpass cleanup result
+      debug:
+        var: pgpass_cleanup_result
         verbosity: 1 
