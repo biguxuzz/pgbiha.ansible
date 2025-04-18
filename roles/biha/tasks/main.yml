@@ -9,12 +9,10 @@
   changed_when: true 
 
 - name: Create .pgpass file for postgres user
-  copy:
-    content: "*:*:*:biha_replication_user:{{ biha_replication_password }}"
-    dest: /var/lib/postgresql/.pgpass
-    owner: postgres
-    group: postgres
-    mode: '0600'
+  raw: |
+    sudo -u postgres sh -c 'echo "*:*:*:biha_replication_user:{{ biha_replication_password }}" > /var/lib/postgresql/.pgpass'
+    sudo -u postgres chmod 600 /var/lib/postgresql/.pgpass
+  changed_when: true
 
 - name: Initialize BiHA cluster on leader
   become: yes
