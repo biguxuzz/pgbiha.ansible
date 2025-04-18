@@ -69,16 +69,14 @@
 - name: Add follower to cluster
   become: yes
   become_user: postgres
-  shell: |
-    {{ postgres_bin_dir }}/bihactl add \
+  raw: |
+    echo "{{ biha_replication_password }}" | {{ postgres_bin_dir }}/bihactl add \
       --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
       --port={{ postgres_port }} \
       --biha-port={{ biha_port }} \
       --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
-  environment:
-    PGPASSWORD: "{{ biha_replication_password }}"
   when: node_role == "FOLLOWER"
   no_log: true
 
