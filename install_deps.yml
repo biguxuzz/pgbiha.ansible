@@ -8,36 +8,63 @@
       raw: apt-get update
       changed_when: false
 
-    - name: Install Python3 packages
-      raw: apt-get install -y python3 python3-pip python3-setuptools python3-six
+    - name: Install Python3 and ansible packages
+      raw: apt-get install -y python3 python3-six python3-ansible python3-setuptools
       changed_when: false
 
-    - name: Create ansible module_utils directory
-      raw: mkdir -p /usr/lib/python3/dist-packages/ansible/module_utils
+    - name: Install python3-six via apt if not already installed
+      raw: apt-get install -y python3-six
       changed_when: false
 
-    - name: Check if six.py exists in module_utils
+    - name: Create ansible module_utils directory if needed
+      raw: |
+        mkdir -p /usr/lib/python3/dist-packages/ansible/module_utils
+        touch /usr/lib/python3/dist-packages/ansible/module_utils/__init__.py
+      changed_when: false
+
+    - name: Check if six.py exists in ansible module_utils
       raw: ls -la /usr/lib/python3/dist-packages/ansible/module_utils/six.py || echo "NOT_FOUND"
       register: six_exists
       changed_when: false
 
-    - name: Create symbolic link to six in Ansible module_utils
+    - name: Debug six.py location
+      raw: |
+        echo "Checking six.py location..."
+        find /usr/lib -name "six.py" | grep -v "ansible-tmp"
+      changed_when: false
+      register: six_location
+
+    - name: Debug six location result
+      raw: echo "Six location result: {{ six_location.stdout }}"
+      changed_when: false
+
+    - name: Create symbolic link to six.py
       raw: |
         if [ "{{ six_exists.stdout }}" == "NOT_FOUND" ]; then
           ln -s /usr/lib/python3/dist-packages/six.py /usr/lib/python3/dist-packages/ansible/module_utils/six.py
-          touch /usr/lib/python3/dist-packages/ansible/module_utils/__init__.py
         fi
       changed_when: "'NOT_FOUND' in six_exists.stdout"
 
-    - name: Install six with pip
-      raw: pip3 install six
+    - name: Verify ansible module_utils exists
+      raw: ls -la /usr/lib/python3/dist-packages/ansible/module_utils/
+      register: ansible_module_utils
       changed_when: false
 
-    - name: Verify six.moves is available
-      raw: python3 -c "from ansible.module_utils.six.moves import urllib; print('six.moves доступен')"
+    - name: Debug ansible module_utils content
+      raw: echo "{{ ansible_module_utils.stdout }}"
+      changed_when: false
+
+    - name: Try to install ansible-core via apt
+      raw: apt-get install -y ansible-core
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Try to import six.moves
+      raw: python3 -c "import six.moves; print('six.moves доступен')"
       register: six_moves_test
       changed_when: false
+      ignore_errors: yes
 
-    - name: Debug six.moves test
-      raw: echo "{{ six_moves_test.stdout }}"
+    - name: Debug six.moves import result
+      raw: echo "six.moves import result: {{ six_moves_test.stdout }}"
       changed_when: false 

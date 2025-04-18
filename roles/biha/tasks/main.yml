@@ -8,11 +8,17 @@
   delay: 5
   changed_when: true 
 
-- name: Create .pgpass file for postgres user
-  raw: |
-    sudo -u postgres sh -c 'echo "*:*:*:biha_replication_user:{{ biha_replication_password }}" > /var/lib/postgresql/.pgpass'
-    sudo -u postgres chmod 600 /var/lib/postgresql/.pgpass
+- name: Create temp .pgpass file
+  command: bash -c "echo '*:*:*:biha_replication_user:{{ biha_replication_password }}' > /tmp/pgpass"
   changed_when: true
+
+- name: Set permissions and move .pgpass file
+  command: bash -c "install -m 0600 -o postgres -g postgres /tmp/pgpass /var/lib/postgresql/.pgpass"
+  changed_when: true
+
+- name: Clean up temp file
+  command: rm -f /tmp/pgpass
+  changed_when: false
 
 - name: Initialize BiHA cluster on leader
   become: yes
