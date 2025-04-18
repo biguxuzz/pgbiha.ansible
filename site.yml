@@ -3,12 +3,13 @@
   hosts: all
   gather_facts: no
   tasks:
-    - name: Install Python 3
-      raw: test -e /usr/bin/python3 || (apt -y update && apt install -y python3-minimal python3-pip python3-setuptools python3-six)
-      changed_when: false
-
-    - name: Install pip packages
-      raw: pip3 install six
+    - name: Install Python 3 and dependencies
+      raw: |
+        if ! command -v python3 >/dev/null 2>&1; then
+          apt-get update
+          apt-get install -y python3-minimal python3-pip python3-setuptools python3-six
+          pip3 install six
+        fi
       changed_when: false
 
 - name: Setup BiHA PostgreSQL cluster
