@@ -1,16 +1,19 @@
 ---
 - name: Stop PostgreSQL service
-  systemd:
-    name: "postgrespro-ent-{{ postgres_version }}"
-    state: stopped
-  when: node_role in ['LEADER', 'FOLLOWER', 'REFEREE']
+  raw: |
+    systemctl stop postgrespro-ent-{{ postgres_version }}
+  register: start_result
+  until: start_result.rc == 0
+  retries: 3
+  delay: 5
+  changed_when: true 
 
 - name: Set PATH for postgres user
   become: yes
   become_user: postgres
   lineinfile:
     path: "/var/lib/postgresql/.bashrc"
-    line: 'export PATH="/opt/pgpro/ent-{{ postgres_version }}/bin:$PATH"'
+    line: 'export PATH="{{ postgres_bin_dir }}:$PATH"'
     create: yes
     mode: '0600'
     owner: postgres
@@ -28,7 +31,7 @@
   become: yes
   become_user: postgres
   shell: |
-    /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl init --convert \
+    {{ postgres_bin_dir }}/bihactl init --convert \
       --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
       --port={{ postgres_port }} \
@@ -75,7 +78,7 @@
   become: yes
   become_user: postgres
   shell: |
-    /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl add \
+    {{ postgres_bin_dir }}/bihactl add \
       --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
       --port={{ postgres_port }} \
@@ -89,7 +92,7 @@
   become: yes
   become_user: postgres
   shell: |
-    /opt/pgpro/ent-{{ postgres_version }}/bin/bihactl add \
+    {{ postgres_bin_dir }}/bihactl add \
       --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
       --port={{ postgres_port }} \
@@ -116,7 +119,7 @@
 - name: Check BiHA cluster status
   become: yes
   become_user: postgres
-  shell: "/opt/pgpro/ent-{{ postgres_version }}/bin/bihactl status --magic-string={{ magic_string }}"
+  shell: "{{ postgres_bin_dir }}/bihactl status --magic-string={{ magic_string }}"
   register: biha_status
   when: node_role == "LEADER"
   changed_when: false 

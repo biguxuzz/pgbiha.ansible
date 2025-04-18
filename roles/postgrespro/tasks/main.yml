@@ -60,8 +60,8 @@
 
 - name: Initialize database
   raw: |
-    if [ ! -f "/var/lib/pgpro/ent-{{ postgres_version }}/data/PG_VERSION" ]; then
-      /opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup initdb --tune=1c
+    if [ ! -f "{{ postgres_data_dir }}/PG_VERSION" ]; then
+      {{ postgres_bin_dir }}/pg-setup initdb --tune=1c
       echo "Database initialized"
     fi
   register: init_result
@@ -69,7 +69,7 @@
 
 - name: Enable Postgres Pro service
   raw: |
-    /opt/pgpro/ent-{{ postgres_version }}/bin/pg-setup service enable
+    {{ postgres_bin_dir }}/pg-setup service enable
   register: enable_result
   changed_when: true
 
