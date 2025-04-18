@@ -25,14 +25,13 @@
   become: yes
   become_user: postgres
   raw: |
-    PGPASSWORD={{ biha_replication_password }} {{ postgres_bin_dir }}/bihactl init --convert \
+    echo "{{ biha_replication_password }}" | {{ postgres_bin_dir }}/bihactl init --convert \
       --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
       --port={{ postgres_port }} \
       --nquorum={{ biha_nquorum }} \
       --minnodes={{ biha_minnodes }} \
-      --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data \
-      --magic-file=/var/lib/pgpro/ent-{{ postgres_version }}/data/magic_string
+      --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
   args:
     creates: "/var/lib/pgpro/ent-{{ postgres_version }}/data/PG_VERSION"
   register: biha_init
@@ -41,7 +40,7 @@
 
 - name: Set magic string fact
   set_fact:
-    magic_string: "{{ lookup('file', '/var/lib/pgpro/ent-{{ postgres_version }}/data/magic_string') }}"
+    magic_string: "{{ biha_init.stdout }}"
   when: node_role == "LEADER"
 
 - name: Configure pg_hba.biha.conf
@@ -70,29 +69,33 @@
 - name: Add follower to cluster
   become: yes
   become_user: postgres
-  raw: |
-    PGPASSWORD={{ biha_replication_password }} {{ postgres_bin_dir }}/bihactl add \
+  shell: |
+    {{ postgres_bin_dir }}/bihactl add \
       --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
       --port={{ postgres_port }} \
       --biha-port={{ biha_port }} \
-      --magic-file=/var/lib/pgpro/ent-{{ postgres_version }}/data/magic_string \
+      --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
+  environment:
+    PGPASSWORD: "{{ biha_replication_password }}"
   when: node_role == "FOLLOWER"
   no_log: true
 
 - name: Add referee to cluster
   become: yes
   become_user: postgres
-  raw: |
-    PGPASSWORD={{ biha_replication_password }} {{ postgres_bin_dir }}/bihactl add \
+  shell: |
+    {{ postgres_bin_dir }}/bihactl add \
       --biha-node-id={{ node_id }} \
       --host={{ ansible_host }} \
       --port={{ postgres_port }} \
       --biha-port={{ biha_port }} \
       --mode=referee \
-      --magic-file=/var/lib/pgpro/ent-{{ postgres_version }}/data/magic_string \
+      --magic-string="{{ magic_string }}" \
       --pgdata=/var/lib/pgpro/ent-{{ postgres_version }}/data
+  environment:
+    PGPASSWORD: "{{ biha_replication_password }}"
   when: node_role == "REFEREE"
   no_log: true
 
@@ -105,7 +108,7 @@
 
 - name: Wait for PostgreSQL to start
   wait_for:
-    port: 5432
+    port: "{{ postgres_port }}"
     timeout: 30
   when: node_role in ['LEADER', 'FOLLOWER', 'REFEREE']
 
