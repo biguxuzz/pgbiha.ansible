@@ -21,6 +21,12 @@
   raw: rm -f /tmp/pgpass
   changed_when: false
 
+- name: Install expect
+  become: yes
+  raw: apt-get update && apt-get install -y expect
+  changed_when: true
+  when: node_role == "LEADER"
+
 - name: Initialize BiHA cluster on leader
   become: yes
   become_user: postgres
