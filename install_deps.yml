@@ -8,12 +8,17 @@
       raw: apt-get update
       changed_when: false
 
-    - name: Install Python3 and ansible packages
-      raw: apt-get install -y python3 python3-six python3-ansible python3-setuptools
+    - name: Install Python3 packages
+      raw: apt-get install -y python3 python3-six python3-setuptools
       changed_when: false
 
-    - name: Install python3-six via apt if not already installed
-      raw: apt-get install -y python3-six
+    - name: Check if ansible package is available
+      raw: apt-cache search python3-ansible || echo "not found"
+      register: ansible_pkg_check
+      changed_when: false
+
+    - name: Debug ansible package check
+      raw: 'echo "Ansible package check: {{ ansible_pkg_check.stdout }}"'
       changed_when: false
 
     - name: Create ansible module_utils directory if needed
@@ -45,6 +50,19 @@
         fi
       changed_when: "'NOT_FOUND' in six_exists.stdout"
 
+    - name: Create ansible module_utils/six directory
+      raw: |
+        mkdir -p /usr/lib/python3/dist-packages/ansible/module_utils/six
+        touch /usr/lib/python3/dist-packages/ansible/module_utils/six/__init__.py
+      changed_when: false
+
+    - name: Create a basic moves.py in ansible module_utils/six
+      raw: |
+        cat > /usr/lib/python3/dist-packages/ansible/module_utils/six/moves.py << 'EOF'
+        from six.moves import *
+        EOF
+      changed_when: false
+
     - name: Verify ansible module_utils exists
       raw: ls -la /usr/lib/python3/dist-packages/ansible/module_utils/
       register: ansible_module_utils
@@ -54,11 +72,6 @@
       raw: 'echo "{{ ansible_module_utils.stdout }}"'
       changed_when: false
 
-    - name: Try to install ansible-core via apt
-      raw: apt-get install -y ansible-core
-      changed_when: false
-      ignore_errors: yes
-
     - name: Try to import six.moves
       raw: python3 -c "import six.moves; print('six.moves доступен')"
       register: six_moves_test
@@ -67,4 +80,14 @@
 
     - name: Debug six.moves import result
       raw: 'echo "six.moves import result: {{ six_moves_test.stdout }}"'
+      changed_when: false
+
+    - name: Try to import ansible.module_utils.six.moves
+      raw: python3 -c "import sys; sys.path.append('/usr/lib/python3/dist-packages/'); import ansible.module_utils.six.moves; print('ansible.module_utils.six.moves доступен')"
+      register: ansible_six_moves_test
+      changed_when: false
+      ignore_errors: yes
+
+    - name: Debug ansible.module_utils.six.moves import result
+      raw: 'echo "ansible.module_utils.six.moves import result: {{ ansible_six_moves_test.stdout }}"'
       changed_when: false 
